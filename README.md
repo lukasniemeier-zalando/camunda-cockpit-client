@@ -1,7 +1,13 @@
 ## Camunda Cockpit Commandline Client
 
-The cockit client allows bulk operations on process instances using the [REST
-API provided by the process engine][1]. Possible operations are
+Incidents in single processes can be easily resolved using the [camunda cockpit
+web application][2], but most of the time incidents are not isolated to single
+processes. In these cases you would have many incidents with similar exceptions
+messages, for example "Read timed out". Retrying them using the cockpit webapp
+can be very cumbersome. This command line tool allows handling these incidents
+in bulk, using the [REST API provided by the camunda process engine][1].
+
+Currently the following operations are supported
 
  - Listing process instances (`--list` / `-l`)
  - Increasing job retries (`--retry` / `-r`)
@@ -38,8 +44,12 @@ line, or the operation can be executed on all process engines of an
 environment using the `--all` flag.
 
 If the url is using https without a certificate known to the [python requests
-library][2] a path to a certificate can also be specified in this configuration
+library][3] a path to a certificate can also be specified in this configuration
 file.
 
+The script has been tested and used in production with version 7.1 and 7.4 of
+the camunda engine.
+
  [1]: https://docs.camunda.org/manual/7.4/reference/rest/
- [2]: http://docs.python-requests.org/en/master/user/advanced/#ca-certificates
+ [2]: https://camunda.org/features/cockpit/
+ [3]: http://docs.python-requests.org/en/master/user/advanced/#ca-certificates

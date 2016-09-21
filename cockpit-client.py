@@ -26,11 +26,11 @@ class BasicAuth:
         self.username = username
         self.password = password
 
-    def login(self, session):
-        session.admin_post('/login/cockpit', username=self.username, password=self.password)
+    def login(self, client):
+        client.admin_post('/login/cockpit', username=self.username, password=self.password)
 
-    def logout(self, session):
-        session.admin_post('/logout')
+    def logout(self, client):
+        client.admin_post('/logout')
 
 class OAuth:
 
@@ -44,17 +44,18 @@ class OAuth:
     def __init__(self, token):
         self.token = token
 
-    def login(self, session):
-        session.headers.update({'Authorization': 'Bearer {}'.format(self.token)})
+    def login(self, client):
+        client.session.headers.update({'Authorization': 'Bearer {}'.format(self.token)})
 
-    def logout(self, session):
+    def logout(self, client):
         pass
 
 
 class Client:
 
-    def __init__(self, session, base, engine, auth, verify = True):
-        self.base = base
+    def __init__(self, session, url_base, url_path, engine, auth, verify = True):
+        self.url_base = url_base
+        self.url_path = url_path
         self.engine = engine
         self.auth = auth
         self.session = session
@@ -69,34 +70,35 @@ class Client:
         return result
 
     def login(self):
-        self.auth.login(self.session)
+        self.auth.login(self)
 
     def logout(self):
-        self.auth.logout(self.session)
+        self.auth.logout(self)
 
     def api_get(self, api, **params):
-        req = self.session.get('%s/engine/%s%s' % (self.base, self.engine, api), params=params, verify=self.verify)
+        req = self.session.get('%s%s/engine/%s%s' % (self.url_base, self.url_path, self.engine, api), params=params, verify=self.verify)
         req.raise_for_status()
         return req
 
     def api_put_json(self, api, json_data):
-        req = self.session.put('%s/engine/%s%s' % (self.base, self.engine, api),
+        req = self.session.put('%s%s/engine/%s%s' % (self.url_base, self.url_path, self.engine, api),
                                headers=self.content_json_headers, data=json.dumps(json_data), verify=self.verify)
         req.raise_for_status()
         return req
 
     def api_delete(self, api):
-        req = self.session.delete('%s/engine/%s%s' % (self.base, self.engine, api), verify=self.verify)
+        req = self.session.delete('%s%s/engine/%s%s' % (self.url_base, self.url_path, self.engine, api), verify=self.verify)
         req.raise_for_status()
         return req
 
     def admin_post(self, api, **data):
-        req = self.session.post('%s/api/admin/auth/user/%s%s' % (self.base, self.engine, api), 
+        req = self.session.post('%s/api/admin/auth/user/%s%s' % (self.url_base, self.engine, api), 
                                 data=data, verify=self.verify)
+        req.raise_for_status()
         return req
 
     def get_statistics(self):
-        statistics = self.api_get(self.base, self.engine, '/process-definition/statistics', incidents=True)
+        statistics = self.api_get(self.url_base, self.engine, '/process-definition/statistics', incidents=True)
         return statistics.json()
 
     def _join_incidents_with_jobs(self, incidents, jobs):
@@ -232,10 +234,13 @@ def main():
     else:
         engines = [args.name]
 
-    auth = OAuth.create(args) if environment['auth'] == 'oauth' else BasicAuth.create(args)
+    auth = OAuth.create(args) if environment.get('auth', 'basic') == 'oauth' else BasicAuth.create(args)
 
-    base_url = environments[args.environment]['url']
-    verify = environments[args.environment].get('verify', True)
+    url_base = environment['url']
+    url_path = environment.get('api-path', '')
+    if len(url_path) > 0 and url_path[0] != '/':
+        url_path = '/' + url_path
+    verify = environment.get('verify', True)
 
     process_instance_id = None
     if args.process_instance_id:
@@ -264,7 +269,7 @@ def main():
         if args.verbose:
             print('Running on process engine %s' % (engine, ))
 
-        client = Client(session, base_url, engine, auth, verify)
+        client = Client(session, url_base, url_path, engine, auth, verify)
         client.login()
 
         try:

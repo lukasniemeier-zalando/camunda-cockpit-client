@@ -9,17 +9,58 @@ import json
 import yaml
 import os
 
-class Client:
+class BasicAuth:
 
-    def __init__(self, session, base, engine, username, password, verify = True):
-        self.base = base
-        self.engine = engine
+    def create(args):
+        username = args.username
+        if username is None:
+            username = input('User Name: ')
+
+        password = args.password
+        if password is None:
+            password = getpass.getpass('Password: ')
+
+        return BasicAuth(username, password)
+
+    def __init__(self, username, password):
         self.username = username
         self.password = password
+
+    def login(self, session):
+        session.admin_post('/login/cockpit', username=self.username, password=self.password)
+
+    def logout(self, session):
+        session.admin_post('/logout')
+
+class OAuth:
+
+    def create(args):
+        token = args.token
+        if token is None:
+            token = input('Token: ')
+
+        return OAuth(token)
+
+    def __init__(self, token):
+        self.token = token
+
+    def login(self, session):
+        session.headers.update({'Authorization': 'Bearer {}'.format(self.token)})
+
+    def logout(self, session):
+        pass
+
+
+class Client:
+
+    def __init__(self, session, base, engine, auth, verify = True):
+        self.base = base
+        self.engine = engine
+        self.auth = auth
         self.session = session
         self.verify = verify
-        self.accept_json_headers = {'Accept': 'application/json, */*;q=0.9'}
-        self.content_json_headers = self._merge_dict(self.accept_json_headers, {'Content-Type': 'application/json'})
+        self.content_json_headers = {'Content-Type': 'application/json'}
+        self.session.headers.update({'Accept': 'application/json, */*;q=0.9'})
 
     def _merge_dict(self, dict1, dict2):
         result = {}
@@ -27,35 +68,32 @@ class Client:
         result.update(dict2)
         return result
 
+    def login(self):
+        self.auth.login(self.session)
+
+    def logout(self):
+        self.auth.logout(self.session)
+
     def api_get(self, api, **params):
-        req = self.session.get('%s/api/engine/engine/%s%s' % (self.base, self.engine, api),
-                               headers=self.accept_json_headers, params=params, verify=self.verify)
+        req = self.session.get('%s/engine/%s%s' % (self.base, self.engine, api), params=params, verify=self.verify)
         req.raise_for_status()
         return req
 
     def api_put_json(self, api, json_data):
-        req = self.session.put('%s/api/engine/engine/%s%s' % (self.base, self.engine, api),
+        req = self.session.put('%s/engine/%s%s' % (self.base, self.engine, api),
                                headers=self.content_json_headers, data=json.dumps(json_data), verify=self.verify)
         req.raise_for_status()
         return req
 
     def api_delete(self, api):
-        req = self.session.delete('%s/api/engine/engine/%s%s' % (self.base, self.engine, api),
-                                  headers=self.accept_json_headers, verify=self.verify)
+        req = self.session.delete('%s/engine/%s%s' % (self.base, self.engine, api), verify=self.verify)
         req.raise_for_status()
         return req
 
     def admin_post(self, api, **data):
-        req = self.session.post('%s/api/admin/auth/user/%s%s' % (self.base, self.engine, api),
-                                headers=self.accept_json_headers, data=data, verify=self.verify)
+        req = self.session.post('%s/api/admin/auth/user/%s%s' % (self.base, self.engine, api), 
+                                data=data, verify=self.verify)
         return req
-
-    def login(self):
-        req = self.admin_post('/login/cockpit', username=self.username, password=self.password)
-        return dict((k, v) for (k, v) in req.cookies.iteritems())
-
-    def logout(self):
-        self.admin_post('/logout')
 
     def get_statistics(self):
         statistics = self.api_get(self.base, self.engine, '/process-definition/statistics', incidents=True)
@@ -91,7 +129,7 @@ class Client:
 
     def show_failed_jobs(self, message_filter=None, from_timestamp=None, to_timestamp=None, process_instance_id=None):
         row_format = \
-                '{processEngine:8}{incidentTimestamp:24}{processDefinitionKey:24}{activityId:40}{processInstanceId:64}{exceptionMessage}'
+                '{processEngine:8}{incidentTimestamp:24}{processDefinitionKey!s:24}{activityId:40}{processInstanceId:64}{exceptionMessage}'
 
         failed_jobs = self.get_failed_jobs(message_filter, from_timestamp, to_timestamp, process_instance_id)
 
@@ -153,6 +191,7 @@ def main():
     parser.add_argument('-e', '--environment', choices=environments.keys())
     parser.add_argument('-u', '--username', nargs='?')
     parser.add_argument('-p', '--password', nargs='?')
+    parser.add_argument('-t', '--token', nargs='?')
 
     filters = parser.add_argument_group()
     filters.add_argument('-i', '--process-instance-id')
@@ -193,13 +232,7 @@ def main():
     else:
         engines = [args.name]
 
-    username = args.username
-    if username is None:
-        username = input('User Name: ')
-
-    password = args.password
-    if password is None:
-        password = getpass.getpass('Password : ')
+    auth = OAuth.create(args) if environment['auth'] == 'oauth' else BasicAuth.create(args)
 
     base_url = environments[args.environment]['url']
     verify = environments[args.environment].get('verify', True)
@@ -231,11 +264,8 @@ def main():
         if args.verbose:
             print('Running on process engine %s' % (engine, ))
 
-        client = Client(session, base_url, engine, username, password, verify)
+        client = Client(session, base_url, engine, auth, verify)
         client.login()
-
-        if args.verbose:
-            print('Logged in user %s' % (username, ))
 
         try:
             if args.list:

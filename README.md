@@ -19,7 +19,7 @@ The process instances to operate on can be selected by
  - Part of an error message from a failed job (`--message` / `-m`)
  - Time range (`--from-timestamp` and `--to-timestamp`, both in ISO-8601 format)
 
-For login currently only the cookie based authorization of the camunda cockpit is
+For login currently cookie based authorization of the camunda cockpit and OAuth are
 supported.
 
 The base url and process engine name have to be configured in a configuration
@@ -31,10 +31,11 @@ file. The script tries to read the configuration from the following two places:
 Example configuration file:
 
     live:
-        url: 'https://live.example.com/camunda'
+        url: 'https://live.example.com/engine-rest'
         engines: [engine1, engine2, engine3, engine4]
+        auth: 'oauth'
     staging:
-        url: 'https://staging.example.com/camunda'
+        url: 'https://staging.example.com/camunda/api/engine'
         engines: [engine1, engine2]
         verify: '/path/to/certificate.pem'
 

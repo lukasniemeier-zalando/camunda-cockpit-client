@@ -71,7 +71,7 @@ class Client:
                 > failed_job['incidentTimestamp'])]
 
     def _filter_by_message(self, failed_jobs, message_pattern):
-        return [failed_job for failed_job in failed_jobs if message_pattern is None or re.search(message_pattern, failed_job['exceptionMessage'] or '') or re.search(message_pattern, failed_job['incidentMessage'] or '')]
+        return [failed_job for failed_job in failed_jobs if message_pattern is None or re.search(message_pattern, failed_job['exceptionMessage'] or '') or re.search(message_pattern, failed_job['incidentMessage'] or '') or (message_pattern.pattern == 'null' and failed_job['exceptionMessage'] is None)]
 
 
     def get_incidents(self, process_instance_id=None, activity_id=None):

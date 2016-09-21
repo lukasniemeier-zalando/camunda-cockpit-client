@@ -76,18 +76,18 @@ class Client:
         self.auth.logout(self)
 
     def api_get(self, api, **params):
-        req = self.session.get('%s/%s/engine/%s%s' % (self.url_base, self.url_path, self.engine, api), params=params, verify=self.verify)
+        req = self.session.get('%s%s/engine/%s%s' % (self.url_base, self.url_path, self.engine, api), params=params, verify=self.verify)
         req.raise_for_status()
         return req
 
     def api_put_json(self, api, json_data):
-        req = self.session.put('%s/%s/engine/%s%s' % (self.url_base, self.url_path, self.engine, api),
+        req = self.session.put('%s%s/engine/%s%s' % (self.url_base, self.url_path, self.engine, api),
                                headers=self.content_json_headers, data=json.dumps(json_data), verify=self.verify)
         req.raise_for_status()
         return req
 
     def api_delete(self, api):
-        req = self.session.delete('%s/%s/engine/%s%s' % (self.url_base, self.url_path, self.engine, api), verify=self.verify)
+        req = self.session.delete('%s%s/engine/%s%s' % (self.url_base, self.url_path, self.engine, api), verify=self.verify)
         req.raise_for_status()
         return req
 
@@ -237,7 +237,9 @@ def main():
     auth = OAuth.create(args) if environment.get('auth', 'basic') == 'oauth' else BasicAuth.create(args)
 
     url_base = environment['url']
-    url_path = environment.get('api-path', 'api/engine')
+    url_path = environment.get('api-path', '')
+    if len(url_path) > 0 and url_path[0] != '/':
+        url_path = '/' + url_path
     verify = environment.get('verify', True)
 
     process_instance_id = None

@@ -35,7 +35,8 @@ Example configuration file:
         engines: [engine1, engine2, engine3, engine4]
         auth: 'oauth'
     staging:
-        url: 'https://staging.example.com/camunda/api/engine'
+        url: 'https://staging.example.com/camunda'
+        api-path: 'api/engine'
         engines: [engine1, engine2]
         verify: '/path/to/certificate.pem'
 

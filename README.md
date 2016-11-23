@@ -1,34 +1,28 @@
-## Camunda Cockpit Commandline Client
+## Camunda Cockpit Command-Line Client
 
-Incidents in single processes can be easily resolved using the [camunda cockpit
-web application][2], but most of the time incidents are not isolated to single
-processes. In these cases you would have many incidents with similar exceptions
-messages, for example "Read timed out". Retrying them using the cockpit webapp
-can be very cumbersome. This command line tool allows handling these incidents
-in bulk, using the [REST API provided by the camunda process engine][1].
+The [Camunda Cockpit web application][2] enables easy resolution of isolated incidents. However, it's much more common to have many incidents arise simultaneously, along with similar exceptions messages — for example, "Read timed out." Retrying multiple incidents using the Cockpit web app is very cumbersome. That's why we've created this command line client, which bulk-handles incidents using Camunda Process Engine's [REST API][1].
 
-Currently the following operations are supported
+ **Featured operations**. This tool supports the following:
 
  - Listing process instances (`--list` / `-l`)
  - Increasing job retries (`--retry` / `-r`)
  - Canceling process instances (`--cancel` / `-c`)
 
-The process instances to operate on can be selected by
+Select **process instances** to operate on with these:
 
  - Process instance id (`--process-instance-id` / `-i`)
  - Part of an error message from a failed job (`--message` / `-m`)
  - Time range (`--from-timestamp` and `--to-timestamp`, both in ISO-8601 format)
 
-For login currently cookie based authorization of the camunda cockpit and OAuth are
-supported.
+###Development Status
+####Login/Configuration
 
-The base url and process engine name have to be configured in a configuration
-file. The script tries to read the configuration from the following two places:
+This tool supports cookie-based authorization of the Camunda Cockpit and [OAuth](https://oauth.net/). Configure the base url and process engine name in a configuration file. The script tries to read the configuration from the following two places:
 
- - the user's home directory as `~/.cockpit-client.yaml`
- - relative to this python script as `cockit-client.yaml`
+ - the user's home directory, as `~/.cockpit-client.yaml`
+ - relative to this Python script, as `cockit-client.yaml`
 
-Example configuration file:
+The authors have tested and used the following script/configuration file in production with version 7.1 and 7.4 of the Camunda engine. In this example, four process engines run for the live instance:
 
     live:
         url: 'https://live.example.com/engine-rest'
@@ -40,17 +34,9 @@ Example configuration file:
         engines: [engine1, engine2]
         verify: '/path/to/certificate.pem'
 
-Here there are four process engines running for the live instance. The
-process engine used can be specified using the `--shard` flag on the command
-line, or the operation can be executed on all process engines of an
-environment using the `--all` flag.
+Here, you could either specify the process engine using the `--shard` flag on the command line, or use the `--all` flag to execute the operation on all process engines of an environment.
 
-If the url is using https without a certificate known to the [python requests
-library][3] a path to a certificate can also be specified in this configuration
-file.
-
-The script has been tested and used in production with version 7.1 and 7.4 of
-the camunda engine.
+If the url uses HTTPS without a certificate known to the [Python request library][3], you can specify a path to a certificate in this configuration file.
 
  [1]: https://docs.camunda.org/manual/7.4/reference/rest/
  [2]: https://camunda.org/features/cockpit/

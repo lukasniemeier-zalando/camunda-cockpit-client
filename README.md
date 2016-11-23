@@ -1,6 +1,6 @@
 ## Camunda Cockpit Command-Line Client
 
-The [Camunda Cockpit web application][2] enables easy resolution of isolated incidents. However, it's much more common to have many incidents arise simultaneously, along with similar exceptions messages — for example, "Read timed out." Retrying multiple incidents using the Cockpit web app is very cumbersome. That's why we've created this command line client, which bulk-handles incidents using Camunda Process Engine's [REST API][1].
+The [Camunda Cockpit web application][2] enables easy resolution of isolated incidents. However, it's much more common to have many incidents arise simultaneously, along with similar exceptions messages — for example, "Read timed out." Retrying multiple incidents using the Cockpit web app is very cumbersome. That's why we've created this command line client, which simplifies bulk-handling of incidents using Camunda Process Engine's [REST API][1].
 
  **Featured operations**. This tool supports the following:
 
@@ -37,6 +37,12 @@ The authors have tested and used the following script/configuration file in prod
 Here, you could either specify the process engine using the `--shard` flag on the command line, or use the `--all` flag to execute the operation on all process engines of an environment.
 
 If the url uses HTTPS without a certificate known to the [Python request library][3], you can specify a path to a certificate in this configuration file.
+
+###Contributing to Camunda Cockpit Command-Line Client
+This project welcomes feedback and contributions. Feel free to claim something from our ["Help Wanted"](https://github.com/zalando/SwiftMonkey) items, or pitch an idea of your own. And take a look at our [Contributor guidelines](https://github.com/zalando/camunda-cockpit-client/blob/master/CONTRIBUTING.md) for info and updates about our process.
+
+###License
+This project uses the [Apache license, version 2](https://github.com/zalando/camunda-cockpit-client/blob/master/LICENSE).
 
  [1]: https://docs.camunda.org/manual/7.4/reference/rest/
  [2]: https://camunda.org/features/cockpit/
